@@ -1,129 +1,96 @@
-# 📚 Knowledge Base (RAG) AI-Powered Information Retrieval
+# Professional Retrieval-Augmented Generation (RAG) Knowledge Base
 
-## 🚀 Overview
+## Project Overview
 
-The **Personal Knowledge Base** project is a **Retrieval-Augmented Generation (RAG)** powered AI system that allows users to **store, retrieve, and query** information using Natural Language Processing (NLP). It combines **vector search, file uploads, and web scraping** to provide precise and context-aware responses.
+This Research-Grade Retrieval-Augmented Generation (RAG) system provides a robust framework for indexing and querying large volumes of unstructured data. By integrating multi-strategy document chunking, hybrid semantic search (Vector + Fuzzy), and conversation-aware retrieval, the system ensures high-precision information recovery and contextually accurate AI-generated responses.
 
-This system is designed to be an **efficient, scalable, and user-friendly solution** for managing personal or organizational knowledge.
-
----
-
-## 🎯 Key Features
-
-### ✅ **Dedicated User Space**
-
-- Users can store and organize knowledge securely.
-- Each user has their own isolated storage for documents and notes.
-
-### 🧠 **AI-Powered Answer Generation**
-
-- Leverages **RAG** to provide **context-aware** responses.
-- Improves query accuracy with transformer-based NLP models.
-
-### 🔍 **Vector Search for Semantic Understanding**
-
-- Uses **vector embeddings** for similarity-based search.
-- Finds relevant information based on **meaning** rather than just keywords.
-
-### 📁 **File Upload Support**
-
-- Supports **.txt, .pdf, .doc**, and other document formats.
-- Ensures **consistent preprocessing and normalization** for enhanced retrieval.
-
-### 🌐 **Web Scraping (Selenium, Playwright)**
-
-- Allows users to fetch **web content** by providing URLs.
-- Scraped content is stored for future retrieval.
-
-### 📊 **Embedding Quantization for Efficiency**
-
-- Reduces memory usage without compromising retrieval performance.
-
-### 🔢 **Query-to-Vector Conversion**
-
-- Converts user queries into vector embeddings using **transformer models**.
-- Enables **fast and accurate** retrieval from stored knowledge.
-
-### 🖥 **Intuitive Frontend with Authentication**
-
-- **User-friendly interface** for document uploads, queries, and knowledge retrieval.
-
-### 💬 **Interactive Chat-Based Search**
-
-- Users can **chat** with the system to query knowledge, upload files, and retrieve relevant information.
-- Enhances usability with a **conversational interface**.
+The architecture is designed for scalability and professional deployment, utilizing Qdrant as a high-performance vector database and DeepSeek as the primary reasoning engine.
 
 ---
 
-## 🏗️ Tech Stack
+## Technical Architecture
 
-| **Category**     | **Technology**                             |
-| ---------------- | ------------------------------------------ |
-| **Frontend**     | Streamlit                                  |
-| **Backend**      | Python                                     |
-| **Vector DB**    | Qdrant                                     |
-| **AI/ML**        | Hugging Face Transformers (for embeddings) |
-| **Generation**   | DeepSeek                                   |
-| **Web Scraping** | Crawl4AI                                   |
+### Core Components
 
----
+1.  **Multi-Strategy Indexing:** Documents are processed using multiple chunking sizes (512, 1024, and 2048 tokens) and a rolling window approach to maintain semantic continuity across boundaries.
+2.  **Hybrid Retrieval Engine:** Combines Dense Vector Search (Cosine Similarity) with Fuzzy Text Matching to handle both semantic queries and specific keyword/typo-prone searches.
+3.  **Conversation-Aware Memory:** A dedicated Qdrant collection tracks chat history, which is independently embedded and queried to provide temporal context to the RAG pipeline.
+4.  **Web Intelligence:** Integrated `crawl4ai` asynchronous scraping allows for dynamic knowledge expansion via URLs.
 
-## 🏛 Architecture
+### Technology Stack
 
-### 🖥 **Frontend**
-
-- **User Authentication & Dashboard**
-- **Chat Section for AI Interactions**
-- **File Upload & Query Interface**
-
-### 🔧 **Backend**
-
-- **Pre-trained Large Language Model (LLM)**
-- **Vector Database for Fast Retrieval**
-- **Transformer Model for Embeddings**
-
-## ![Alt text](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*yPTMaStnW4Nh9whAbFB7Yg.png "a title")
+| Component | Technology |
+| :--- | :--- |
+| **Frontend** | Streamlit |
+| **Orchestration** | Python / LangChain |
+| **Vector Database** | Qdrant |
+| **Embeddings** | SentenceTransformers (all-MiniLM-L6-v2) |
+| **LLM Inference** | DeepSeek (via OpenAI SDK) |
+| **Web Scraping** | Crawl4AI |
+| **Authentication** | Bcrypt / Session-based |
 
 ---
 
-## ⚙️ Workflow
+## System Logic and Workflow
 
-1. **File Upload / Web Scraping**
+### 1. Document Ingestion and Processing
+- **Normalization:** Documents (PDF, DOCX, TXT, MD) are loaded and normalized into plain text.
+- **Hierarchical Chunking:** Chunks are generated at varying granulaties to capture both micro-details and macro-context.
+- **Vectorization:** Each chunk is converted into a 384-dimensional dense vector using the `all-MiniLM-L6-v2` transformer model.
 
-   - Users upload files or provide URLs.
-   - The system normalizes and preprocesses the content.
+### 2. Retrieval Pipeline (Hybrid Search)
+When a query is received, the system performs a dual-path retrieval:
+- **Vector Search:** Identifies chunks with the highest cosine similarity to the query embedding.
+- **Fuzzy Search:** Performs Levenshtein-based matching to catch specific terms that might be diluted in vector space.
+- **Rank Fusion:** Results are weighted and fused (default 70% Vector, 30% Fuzzy) to produce the final context set.
 
-2. **Vector Embedding Generation**
+### 3. Conversation Awareness
+- Past dialogue turns are stored in a session-isolated memory collection.
+- The system retrieves relevant past exchanges to resolve pronominal references (e.g., "Tell me more about *it*") before generating the final answer.
 
-   - Transformer models generate **semantic embeddings**.
-   - The embeddings are stored in a **vector database**.
+---
 
-3. **Query Processing**
+## Directory Structure
 
-   - User queries are converted into vector embeddings.
-   - The system retrieves **most relevant** information from the database.
-
-4. **Results Presentation**
-   - Results are presented in the **chat interface** or **UI dashboard**.
-
-```mermaid
-graph TD
-    %% User Input Section
-    A["User Input"] --> B{"Input Type"}
-    B -->|"Files"| C["File Upload"]
-    B -->|"URLs"| D["Web Scraping"]
-
-    %% Processing Section
-    C --> E["Content Normalization"]
-    D --> E
-    E --> F["Generate Vector Embeddings"]
-
-    %% Storage Section
-    F --> G["Vector Database"]
-    F --> H["Document Storage"]
-    G -->|"Store Quantized Embeddings"| I["Metadata Storage"]
-    H -->|"Store Original Files"| I
-
-    %% Query Processing
-
+```text
+├── core/               # Main RAG and logic components
+│   ├── auth_service.py # Authentication & Session management
+│   ├── context_handler.py # Logic for merging doc & chat context
+│   ├── memory_manager.py # Qdrant-based chat history management
+│   └── rag_engine.py      # LLM interfacing and document processing
+├── database/           # Database abstraction layers
+│   └── qdrant_service.py # Qdrant connection and search logic
+├── services/           # External service integrations
+│   ├── document_processor.py # File parsing and chunking
+│   ├── url_loader.py         # URL handling
+│   └── web_scraper.py        # Asynchronous web crawling
+├── utils/              # Development and debug utilities
+├── data/               # Persistent storage for uploads/scrapes
+└── app.py              # Application entry point (Streamlit)
 ```
+
+---
+
+## Setup and Installation
+
+### Prerequisites
+- Python 3.9+
+- Qdrant Server (Running locally on port 6333 or via Docker)
+
+### Installation
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Configure environment variables by copying `.env.example` to `.env` and providing your DeepSeek API Key.
+4.  Launch the application:
+    ```bash
+    streamlit run app.py
+    ```
+
+---
+
+## Security and Compliance
+- **Credential Management:** No hardcoded secrets. All API keys and credentials must be provided via the `.env` file.
+- **Session Isolation:** User data and chat histories are isolated via unique session IDs and collection names.

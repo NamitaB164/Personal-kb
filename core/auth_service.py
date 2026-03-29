@@ -5,24 +5,24 @@ import bcrypt
 import uuid
 import json
 from datetime import datetime, timedelta
-from memory_manager import store_message
+from core.memory_manager import store_message
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from document_loader import load_and_chunk_documents_with_multiple_strategies
-from qdrant_helper import index_document_with_strategies
+from services.document_processor import load_and_chunk_documents_with_multiple_strategies
+from database.qdrant_service import index_document_with_strategies
 from langchain.schema import Document
-from memory_manager import (
+from core.memory_manager import (
     retrieve_context_relevant_messages,
     get_all_session_messages,
     store_message,
     format_context_messages
 )
-from conversation_aware_rag import (
+from core.context_handler import (
     answer_query_with_conversation_context,
     create_context_message
 )
-from qdrant_helper import index_document_with_strategies, query_qdrant_multi_strategy, hybrid_search
-from rag import generate_answer
-from web_crawl import get_scrape_content
+from database.qdrant_service import index_document_with_strategies, query_qdrant_multi_strategy, hybrid_search
+from core.rag_engine import generate_answer
+from services.web_scraper import get_scrape_content
 
 # User authentication constants
 USER_DB_FILE = "user_database.json"
@@ -145,7 +145,7 @@ def init_auth_state():
 
 # Login page
 def show_login_page():
-    st.title("📚 Conversation-Aware RAG System")
+    st.title("Conversation-Aware RAG System")
     
     tab1, tab2 = st.tabs(["Login", "Sign Up"])
     
@@ -202,7 +202,7 @@ def show_login_page():
 
 # User-specific session ID
 def get_user_session_id():
-    return f"{st.session_state.username}_{SESSION_ID}"
+    return f"{st.session_state.username}_user_session"
 
 # Main application
 def show_main_app():
@@ -223,7 +223,7 @@ def show_main_app():
         st.session_state.use_conversation_memory = True
 
     # App layout with columns
-    st.title(f"📚 RAG Assistant - Welcome, {st.session_state.username}!")
+    st.title(f"RAG Assistant - Welcome, {st.session_state.username}!")
 
     # Create a two-column layout
     col1, col2 = st.columns([2, 1])
@@ -238,7 +238,7 @@ def show_main_app():
             st.session_state.session_id = None
             st.rerun()
             
-        st.header("📄 Upload Documents")
+        st.header("Upload Documents")
         uploaded_files = st.file_uploader("Choose documents", type=["pdf", "docx", "txt"], accept_multiple_files=True)
         
         if uploaded_files:
@@ -261,12 +261,12 @@ def show_main_app():
                         save_user_db(db)
                     
                     if response["status"] == "success":
-                        st.success(f"✅ Indexed {sum(len(v) for v in chunks.values())} chunks")
+                        st.success(f"Indexed {sum(len(v) for v in chunks.values())} chunks")
                     else:
-                        st.error(f"❌ Failed: {response['message']}")
+                        st.error(f"Failed: {response['message']}")
         
         # Add memory toggle in sidebar
-        st.header("⚙ Settings")
+        st.header("Settings")
         st.session_state.use_conversation_memory = st.toggle(
             "Use conversation memory", 
             value=st.session_state.use_conversation_memory,
@@ -287,7 +287,7 @@ def show_main_app():
                 os.makedirs(user_scrape_dir, exist_ok=True)
                 
                 scraped_file = asyncio.run(get_scrape_content(url, output_dir=user_scrape_dir))
-                st.sidebar.write(f"✅ Scraped content from {url}")
+                st.sidebar.write(f"Scraped content from {url}")
                 chunks = load_and_chunk_documents_with_multiple_strategies(scraped_file)
                         
                 response = index_document_with_strategies(user_document_collection, url, chunks)
@@ -379,7 +379,7 @@ def show_main_app():
 
     # Source panel (right column)
     with col2:
-        st.header("📑 Referenced Sources")
+        st.header("Referenced Sources")
         
         if st.session_state.last_retrieved_sources:
             # Group sources by type

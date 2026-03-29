@@ -1,13 +1,13 @@
 import logging
 from typing import Dict, List, Any
 from langchain_core.messages import SystemMessage
-from memory_manager import (
+from core.memory_manager import (
     retrieve_context_relevant_messages, 
     format_context_messages,
     store_message
 )
-from qdrant_helper import hybrid_search
-from rag import generate_answer
+from database.qdrant_service import hybrid_search
+from core.rag_engine import generate_answer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
